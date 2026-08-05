@@ -85,6 +85,17 @@ class MainWindow(QMainWindow):
         settings_layout.addWidget(QLabel("Theme:"))
         settings_layout.addWidget(self.theme_combo)
 
+        self.use_browser_cookies_cb = QCheckBox("Use browser cookies")
+        settings_layout.addWidget(self.use_browser_cookies_cb)
+
+        self.browser_combo = QComboBox()
+        self.browser_combo.addItems(["chrome", "edge", "firefox", "safari", "opera", "brave", "vivaldi", "chromium"])
+        settings_layout.addWidget(self.browser_combo)
+
+        self.use_browser_cookies_cb.toggled.connect(lambda checked: self.browser_combo.setEnabled(checked))
+        self.use_browser_cookies_cb.setChecked(False)
+        self.browser_combo.setEnabled(False)
+
         self.login_btn = QPushButton("Login to YouTube")
         self.login_btn.clicked.connect(self.open_login_browser)
         settings_layout.addWidget(self.login_btn)
@@ -110,6 +121,15 @@ class MainWindow(QMainWindow):
             self.preset_combo.setItemData(self.preset_combo.count()-1, tooltip, Qt.ItemDataRole.ToolTipRole)
 
         presets_layout.addWidget(self.preset_combo)
+
+        self.video_format_combo = QComboBox()
+        self.video_format_combo.addItems(["mp4", "webm", "avi"])
+        presets_layout.addWidget(self.video_format_combo)
+
+        # Disable video format combo if an Audio preset is selected
+        self.preset_combo.currentTextChanged.connect(
+            lambda text: self.video_format_combo.setEnabled("Video" in text)
+        )
 
         self.download_btn = QPushButton("Download")
         self.download_btn.clicked.connect(self.start_download)
@@ -200,14 +220,19 @@ class MainWindow(QMainWindow):
         download_dir = self.settings["download_dir"]
         from src.ui.browser_window import COOKIES_FILE
 
+        use_browser_cookies = self.use_browser_cookies_cb.isChecked()
+        browser_name = self.browser_combo.currentText() if use_browser_cookies else None
+
+        video_format = self.video_format_combo.currentText() if "Video" in preset else None
+
         # UI update
         self.log(f"Initializing download for: {url}")
-        self.log(f"Preset: {preset}, Force: {force}")
+        self.log(f"Preset: {preset}, Video Format: {video_format}, Force: {force}, Browser Cookies: {use_browser_cookies} ({browser_name})")
 
         progress_bar, cancel_btn, item_widget = self.downloads_list.add_download(url)
 
         from src.engine.downloader import DownloadWorker
-        worker = DownloadWorker(url, preset, download_dir, COOKIES_FILE, force_download=force)
+        worker = DownloadWorker(url, preset, download_dir, COOKIES_FILE, force_download=force, browser_name=browser_name, video_format=video_format)
 
         if force:
             self.active_force_worker = worker

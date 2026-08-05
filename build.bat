@@ -3,6 +3,26 @@ echo ==============================================
 echo YouTube Fast Saver - Build Script for Windows
 echo ==============================================
 
+:: Detect python executable
+set PYTHON_CMD=python
+%PYTHON_CMD% --version >nul 2>&1
+if %ERRORLEVEL% equ 0 goto check_ffmpeg
+
+set PYTHON_CMD=py
+%PYTHON_CMD% --version >nul 2>&1
+if %ERRORLEVEL% equ 0 goto check_ffmpeg
+
+:: If we reach here, neither python nor py works
+echo ERROR: Python is not installed or not added to PATH!
+echo.
+echo Please install Python 3.10+ from python.org
+echo IMPORTANT: During installation, make sure to check the box:
+echo "Add Python to PATH" or "Add python.exe to PATH"
+echo.
+pause
+exit /b 1
+
+:check_ffmpeg
 if exist "ffmpeg.exe" goto has_ffmpeg
 
 echo [1/3] Downloading ffmpeg from GitHub (BtbN/FFmpeg-Builds)...
@@ -14,22 +34,32 @@ if not exist "ffmpeg.exe" goto failed_ffmpeg
 echo [1/3] ffmpeg.exe is present.
 
 echo.
-echo [2/3] Installing dependencies...
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-python -m pip install pyinstaller
+echo [2/3] Installing dependencies using %PYTHON_CMD%...
+%PYTHON_CMD% -m pip install --upgrade pip
+%PYTHON_CMD% -m pip install -r requirements.txt
+%PYTHON_CMD% -m pip install pyinstaller
 
 echo.
 echo [3/3] Building executable with PyInstaller...
-python -m PyInstaller --noconfirm --noconsole --icon "src\assets\YTFS.ico" --add-binary "ffmpeg.exe;." --name "YouTubeFastSaver" "src\main.py"
+%PYTHON_CMD% -m PyInstaller --noconfirm --noconsole --icon "src\assets\YTFS.ico" --add-binary "ffmpeg.exe;." --name "YouTubeFastSaver" "src\main.py"
+
+if %ERRORLEVEL% neq 0 goto failed_build
 
 echo.
 echo ==============================================
-echo Build Process Finished!
+echo Build Process Finished Successfully!
 echo Check the "dist" folder for your executable.
 echo ==============================================
 pause
 exit /b 0
+
+:failed_build
+echo.
+echo ==============================================
+echo ERROR: Build failed! Check the console output above for details.
+echo ==============================================
+pause
+exit /b 1
 
 :failed_ffmpeg
 echo ERROR: Failed to download ffmpeg.exe. Please download it manually and place it in this folder.

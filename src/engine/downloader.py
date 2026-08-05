@@ -5,7 +5,6 @@ from PyQt6.QtCore import QThread, pyqtSignal
 
 class DownloadWorker(QThread):
     progress_updated = pyqtSignal(float)
-    speed_updated = pyqtSignal(str)
     status_updated = pyqtSignal(str)
     download_finished = pyqtSignal(bool, str)
 
@@ -122,20 +121,11 @@ class DownloadWorker(QThread):
         if d['status'] == 'downloading':
             total = d.get('total_bytes') or d.get('total_bytes_estimate')
             downloaded = d.get('downloaded_bytes', 0)
-            speed = d.get('speed', 0)
-
             if total:
                 percent = (downloaded / total) * 100
                 self.progress_updated.emit(percent)
-
-            if speed:
-                # speed is in bytes per second
-                speed_mb = speed / 1024 / 1024
-                self.speed_updated.emit(f"{speed_mb:.1f} MB/s")
-
         elif d['status'] == 'finished':
             self.progress_updated.emit(100)
-            self.speed_updated.emit("Done")
             self.status_updated.emit("Download finished. Processing...")
 
     def stop(self):

@@ -54,7 +54,15 @@ class DownloadWorker(QThread):
         return "best"
 
     def _download(self):
-        from src.ui.browser_window import COMMON_USER_AGENT
+        from src.ui.browser_window import USER_AGENT_FILE
+
+        user_agent = None
+        if os.path.exists(USER_AGENT_FILE):
+            try:
+                with open(USER_AGENT_FILE, "r", encoding="utf-8") as f:
+                    user_agent = f.read().strip()
+            except:
+                pass
 
         ydl_opts = {
             'format': self._get_format_string(),
@@ -64,10 +72,10 @@ class DownloadWorker(QThread):
             'quiet': True,
             'no_warnings': True,
             'ignoreerrors': False, # We want to catch errors to retry
-            'http_headers': {
-                'User-Agent': COMMON_USER_AGENT,
-            }
         }
+
+        if user_agent:
+            ydl_opts['http_headers'] = {'User-Agent': user_agent}
 
         # Add cookies if the file exists
         if os.path.exists(self.cookies_file):

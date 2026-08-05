@@ -4,10 +4,9 @@ from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWebEngineCore import QWebEngineProfile
 from PyQt6.QtCore import QUrl, pyqtSignal
 
+import json
 COOKIES_FILE = os.path.abspath("cookies.txt")
-
-# Set a common user-agent to avoid YouTube detecting bot discrepancy between browser and yt-dlp
-COMMON_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+USER_AGENT_FILE = os.path.abspath("user_agent.txt")
 
 class BrowserWindow(QMainWindow):
     cookies_saved = pyqtSignal(str)
@@ -23,9 +22,16 @@ class BrowserWindow(QMainWindow):
 
         self.profile = QWebEngineProfile("youtube_login_profile", self)
         self.profile.setPersistentCookiesPolicy(QWebEngineProfile.PersistentCookiesPolicy.ForcePersistentCookies)
-        self.profile.setHttpUserAgent(COMMON_USER_AGENT)
 
         self.browser = QWebEngineView(self)
+
+        # Capture and save the default real User-Agent that Qt WebEngine uses
+        real_user_agent = self.profile.httpUserAgent()
+        try:
+            with open(USER_AGENT_FILE, "w", encoding="utf-8") as f:
+                f.write(real_user_agent)
+        except Exception as e:
+            print(f"Error saving user agent: {e}")
         self.browser.setPage(self.browser.page())
 
         # We need to set the profile to the page. Wait, QWebEnginePage takes profile in constructor.

@@ -4,7 +4,7 @@ import time
 from PyQt6.QtCore import QThread, pyqtSignal
 
 class DownloadWorker(QThread):
-    progress_updated = pyqtSignal(float)
+    progress_updated = pyqtSignal(int)
     status_updated = pyqtSignal(str)
     download_finished = pyqtSignal(bool, str)
 
@@ -16,6 +16,9 @@ class DownloadWorker(QThread):
         self.cookies_file = cookies_file
         self.force_download = force_download
         self.is_running = True
+        self.current_filename = None
+        self.ydl_instance = None
+        self.cancelled = False
 
     def run(self):
         while self.is_running:
@@ -54,16 +57,6 @@ class DownloadWorker(QThread):
         return "best"
 
     def _download(self):
-        from src.ui.browser_window import USER_AGENT_FILE
-
-        user_agent = None
-        if os.path.exists(USER_AGENT_FILE):
-            try:
-                with open(USER_AGENT_FILE, "r", encoding="utf-8") as f:
-                    user_agent = f.read().strip()
-            except:
-                pass
-
         ydl_opts = {
             'format': self._get_format_string(),
             'outtmpl': os.path.join(self.download_dir, '%(title)s.%(ext)s'),
@@ -73,9 +66,6 @@ class DownloadWorker(QThread):
             'no_warnings': True,
             'ignoreerrors': False, # We want to catch errors to retry
         }
-
-        if user_agent:
-            ydl_opts['http_headers'] = {'User-Agent': user_agent}
 
         # Add cookies if the file exists
         if os.path.exists(self.cookies_file):
@@ -98,7 +88,15 @@ class DownloadWorker(QThread):
             if os.path.exists(ffmpeg_path):
                 ydl_opts['ffmpeg_location'] = ffmpeg_path
 
+        # Hook to abort download if cancelled
+        def _abort_hook(d):
+            if self.cancelled:
+                raise yt_dlp.utils.DownloadCancelled('Download cancelled by user.')
+
+        ydl_opts['progress_hooks'].insert(0, _abort_hook)
+
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            self.ydl_instance = ydl
             # First extract info to check if requested format is available exactly
             info = ydl.extract_info(self.url, download=False)
             if not info:
@@ -131,11 +129,15 @@ class DownloadWorker(QThread):
             ydl.download([self.url])
 
     def _progress_hook(self, d):
+        # Always capture filename so we can delete it later
+        if 'filename' in d:
+            self.current_filename = d['filename']
+
         if d['status'] == 'downloading':
             total = d.get('total_bytes') or d.get('total_bytes_estimate')
             downloaded = d.get('downloaded_bytes', 0)
             if total:
-                percent = (downloaded / total) * 100
+                percent = int((downloaded / total) * 100)
                 self.progress_updated.emit(percent)
         elif d['status'] == 'finished':
             self.progress_updated.emit(100)
@@ -144,3 +146,4 @@ class DownloadWorker(QThread):
     def stop(self):
         self.is_running = False
         self.force_download = False
+        self.cancelled = True

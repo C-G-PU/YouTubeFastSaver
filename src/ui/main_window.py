@@ -22,15 +22,11 @@ class DownloadsListWidget(QWidget):
         progress_bar = QProgressBar()
         progress_bar.setValue(0)
 
-        speed_label = QLabel("0.0 MB/s")
-        speed_label.setFixedWidth(80)
-
         item_layout.addWidget(title_label)
         item_layout.addWidget(progress_bar)
-        item_layout.addWidget(speed_label)
 
         self.layout.addWidget(item_widget)
-        return progress_bar, speed_label
+        return progress_bar
 
 class MainWindow(QMainWindow):
     def __init__(self, app):
@@ -179,7 +175,7 @@ class MainWindow(QMainWindow):
         self.log(f"Initializing download for: {url}")
         self.log(f"Preset: {preset}, Force: {force}")
 
-        progress_bar, speed_label = self.downloads_list.add_download(url)
+        progress_bar = self.downloads_list.add_download(url)
 
         from src.engine.downloader import DownloadWorker
         worker = DownloadWorker(url, preset, download_dir, COOKIES_FILE, force_download=force)
@@ -189,14 +185,7 @@ class MainWindow(QMainWindow):
             self.workers = []
         self.workers.append(worker)
 
-        def on_progress_updated(percent):
-            progress_bar.setValue(int(percent))
-
-        def on_speed_updated(speed_str):
-            speed_label.setText(speed_str)
-
-        worker.progress_updated.connect(on_progress_updated)
-        worker.speed_updated.connect(on_speed_updated)
+        worker.progress_updated.connect(progress_bar.setValue)
         worker.status_updated.connect(self.log)
 
         def on_finished(success, message):

@@ -78,6 +78,12 @@ class DownloadWorker(QThread):
 
         # This requires ffmpeg on system path for audio extraction or video merging
         # If ffmpeg is not available, it might fail.
+        import sys
+        if getattr(sys, 'frozen', False):
+            # Running as compiled PyInstaller executable
+            ffmpeg_path = os.path.join(sys._MEIPASS, 'ffmpeg.exe')
+            if os.path.exists(ffmpeg_path):
+                ydl_opts['ffmpeg_location'] = ffmpeg_path
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             # First extract info to check if requested format is available exactly

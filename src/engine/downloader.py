@@ -54,6 +54,8 @@ class DownloadWorker(QThread):
         return "best"
 
     def _download(self):
+        from src.ui.browser_window import COMMON_USER_AGENT
+
         ydl_opts = {
             'format': self._get_format_string(),
             'outtmpl': os.path.join(self.download_dir, '%(title)s.%(ext)s'),
@@ -62,6 +64,9 @@ class DownloadWorker(QThread):
             'quiet': True,
             'no_warnings': True,
             'ignoreerrors': False, # We want to catch errors to retry
+            'http_headers': {
+                'User-Agent': COMMON_USER_AGENT,
+            }
         }
 
         # Add cookies if the file exists

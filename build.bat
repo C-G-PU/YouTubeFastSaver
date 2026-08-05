@@ -41,7 +41,8 @@ echo [2/3] Installing dependencies using %PYTHON_CMD%...
 
 echo.
 echo [3/3] Building executable with PyInstaller...
-%PYTHON_CMD% -m PyInstaller --noconfirm --noconsole --icon "src\assets\YTFS.ico" --add-binary "ffmpeg.exe;." --name "YouTubeFastSaver" "src\main.py"
+:: Added specific flags to force PyInstaller to bundle all PyQt6 and PyQt6-WebEngine components (like QtWebEngineProcess.exe and resources)
+%PYTHON_CMD% -m PyInstaller --noconfirm --noconsole --icon "src\assets\YTFS.ico" --add-binary "ffmpeg.exe;." --collect-data PyQt6 --collect-binaries PyQt6 --collect-data PyQt6-WebEngine --collect-binaries PyQt6-WebEngine --hidden-import PyQt6.QtWebEngineCore --name "YouTubeFastSaver" "src\main.py"
 
 if %ERRORLEVEL% neq 0 goto failed_build
 

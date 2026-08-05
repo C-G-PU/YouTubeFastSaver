@@ -15,6 +15,7 @@ class BrowserWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Login to YouTube")
         self.resize(800, 600)
+        self.cookies_dict = {}
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -23,9 +24,10 @@ class BrowserWindow(QMainWindow):
         self.profile = QWebEngineProfile("youtube_login_profile", self)
         self.profile.setPersistentCookiesPolicy(QWebEngineProfile.PersistentCookiesPolicy.ForcePersistentCookies)
 
-        self.browser = QWebEngineView(self)
+        self.profile.cookieStore().cookieAdded.connect(self.on_cookie_added)
+        self.profile.cookieStore().loadAllCookies()
 
-        self.browser.setPage(self.browser.page())
+        self.browser = QWebEngineView(self)
 
         # We need to set the profile to the page. Wait, QWebEnginePage takes profile in constructor.
         from PyQt6.QtWebEngineCore import QWebEnginePage
@@ -35,31 +37,6 @@ class BrowserWindow(QMainWindow):
         self.layout.addWidget(self.browser)
 
         self.browser.setUrl(QUrl("https://accounts.google.com/ServiceLogin?service=youtube&continue=https://www.youtube.com/"))
-
-        self.browser.loadFinished.connect(self.on_load_finished)
-
-    def on_load_finished(self, ok):
-        # Every time a page loads, we try to save cookies
-        if ok:
-            self.save_cookies()
-
-    def save_cookies(self):
-        cookie_store = self.profile.cookieStore()
-        self.cookies_dict = {}
-
-        # Connect to intercept cookies BEFORE loading them
-        try:
-            cookie_store.cookieAdded.disconnect(self.on_cookie_added)
-        except Exception:
-            pass
-        self._cookie_added_conn = cookie_store.cookieAdded.connect(self.on_cookie_added)
-
-        # This is asynchronous
-        cookie_store.loadAllCookies()
-
-        # Wait longer to ensure all cookies load, especially YouTube auth cookies
-        from PyQt6.QtCore import QTimer
-        QTimer.singleShot(3000, self.write_cookies_to_file)
 
     def on_cookie_added(self, cookie):
         domain = cookie.domain()
@@ -95,14 +72,9 @@ class BrowserWindow(QMainWindow):
                     f.write(line)
 
             self.cookies_saved.emit(COOKIES_FILE)
-
-            try:
-                self.profile.cookieStore().cookieAdded.disconnect(self.on_cookie_added)
-            except Exception:
-                pass
         except Exception as e:
             print(f"Error saving cookies: {e}")
 
     def closeEvent(self, event):
-        self.save_cookies()
+        self.write_cookies_to_file()
         super().closeEvent(event)

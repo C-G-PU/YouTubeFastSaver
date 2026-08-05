@@ -8,13 +8,15 @@ class DownloadWorker(QThread):
     status_updated = pyqtSignal(str)
     download_finished = pyqtSignal(bool, str)
 
-    def __init__(self, url, preset_name, download_dir, cookies_file, force_download=False):
+    def __init__(self, url, preset_name, download_dir, cookies_file, force_download=False, browser_name=None, video_format=None):
         super().__init__()
         self.url = url
         self.preset_name = preset_name
         self.download_dir = download_dir
         self.cookies_file = cookies_file
         self.force_download = force_download
+        self.browser_name = browser_name
+        self.video_format = video_format
         self.is_running = True
         self.current_filename = None
         self.ydl_instance = None
@@ -68,7 +70,9 @@ class DownloadWorker(QThread):
         }
 
         # Add cookies if the file exists
-        if os.path.exists(self.cookies_file):
+        if self.browser_name:
+            ydl_opts['cookiesfrombrowser'] = (self.browser_name,)
+        elif os.path.exists(self.cookies_file):
             ydl_opts['cookiefile'] = self.cookies_file
 
         if "Audio" in self.preset_name:
@@ -77,6 +81,12 @@ class DownloadWorker(QThread):
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
                 'preferredquality': abr,
+            }]
+        elif "Video" in self.preset_name and self.video_format:
+            # Add video convertor postprocessor if a specific format is selected and we are downloading a video
+            ydl_opts['postprocessors'] = [{
+                'key': 'FFmpegVideoConvertor',
+                'preferedformat': self.video_format,
             }]
 
         # This requires ffmpeg on system path for audio extraction or video merging

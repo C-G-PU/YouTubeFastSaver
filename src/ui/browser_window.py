@@ -25,13 +25,6 @@ class BrowserWindow(QMainWindow):
 
         self.browser = QWebEngineView(self)
 
-        # Capture and save the default real User-Agent that Qt WebEngine uses
-        real_user_agent = self.profile.httpUserAgent()
-        try:
-            with open(USER_AGENT_FILE, "w", encoding="utf-8") as f:
-                f.write(real_user_agent)
-        except Exception as e:
-            print(f"Error saving user agent: {e}")
         self.browser.setPage(self.browser.page())
 
         # We need to set the profile to the page. Wait, QWebEnginePage takes profile in constructor.
@@ -54,15 +47,15 @@ class BrowserWindow(QMainWindow):
         cookie_store = self.profile.cookieStore()
         self.cookies_dict = {}
 
-        # This is asynchronous
-        cookie_store.loadAllCookies()
-
-        # Connect to intercept cookies
+        # Connect to intercept cookies BEFORE loading them
         try:
             cookie_store.cookieAdded.disconnect(self.on_cookie_added)
         except Exception:
             pass
         self._cookie_added_conn = cookie_store.cookieAdded.connect(self.on_cookie_added)
+
+        # This is asynchronous
+        cookie_store.loadAllCookies()
 
         # Wait longer to ensure all cookies load, especially YouTube auth cookies
         from PyQt6.QtCore import QTimer

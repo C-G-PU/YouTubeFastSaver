@@ -96,6 +96,18 @@ class MainWindow(QMainWindow):
         self.use_browser_cookies_cb.setChecked(False)
         self.browser_combo.setEnabled(False)
 
+        # Client spoofing selection
+        settings_layout.addWidget(QLabel("Client:"))
+        self.client_spoofing_combo = QComboBox()
+        self.client_spoofing_combo.addItems([
+            "Android + Web (Default)",
+            "Android",
+            "Web",
+            "iOS",
+            "None"
+        ])
+        settings_layout.addWidget(self.client_spoofing_combo)
+
         self.login_btn = QPushButton("Login to YouTube")
         self.login_btn.clicked.connect(self.open_login_browser)
         settings_layout.addWidget(self.login_btn)
@@ -225,14 +237,16 @@ class MainWindow(QMainWindow):
 
         video_format = self.video_format_combo.currentText() if "Video" in preset else None
 
+        client_spoofing = self.client_spoofing_combo.currentText()
+
         # UI update
         self.log(f"Initializing download for: {url}")
-        self.log(f"Preset: {preset}, Video Format: {video_format}, Force: {force}, Browser Cookies: {use_browser_cookies} ({browser_name})")
+        self.log(f"Preset: {preset}, Video Format: {video_format}, Force: {force}, Browser Cookies: {use_browser_cookies} ({browser_name}), Client: {client_spoofing}")
 
         progress_bar, cancel_btn, item_widget = self.downloads_list.add_download(url)
 
         from src.engine.downloader import DownloadWorker
-        worker = DownloadWorker(url, preset, download_dir, COOKIES_FILE, force_download=force, browser_name=browser_name, video_format=video_format)
+        worker = DownloadWorker(url, preset, download_dir, COOKIES_FILE, force_download=force, browser_name=browser_name, video_format=video_format, client_spoofing=client_spoofing)
 
         if force:
             self.active_force_worker = worker

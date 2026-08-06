@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QMessageBox
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 from PyQt6.QtWebEngineCore import QWebEngineProfile
 from PyQt6.QtCore import QUrl, pyqtSignal
+from PyQt6.QtNetwork import QNetworkCookie
 
 import json
 COOKIES_FILE = os.path.abspath("cookies.txt")
@@ -42,7 +43,8 @@ class BrowserWindow(QMainWindow):
         domain = cookie.domain()
         name = str(cookie.name(), 'utf-8')
         # Use domain + name as a unique key to prevent duplicates
-        self.cookies_dict[f"{domain}_{name}"] = cookie
+        # Copy the cookie to prevent segfaults when Qt destroys the original C++ object
+        self.cookies_dict[f"{domain}_{name}"] = QNetworkCookie(cookie)
 
     def write_cookies_to_file(self):
         try:

@@ -8,7 +8,7 @@ class DownloadWorker(QThread):
     status_updated = pyqtSignal(str)
     download_finished = pyqtSignal(bool, str)
 
-    def __init__(self, url, preset_name, download_dir, cookies_file, force_download=False, browser_name=None, video_format=None):
+    def __init__(self, url, preset_name, download_dir, cookies_file, force_download=False, browser_name=None, video_format=None, client_spoofing=None):
         super().__init__()
         self.url = url
         self.preset_name = preset_name
@@ -17,6 +17,7 @@ class DownloadWorker(QThread):
         self.force_download = force_download
         self.browser_name = browser_name
         self.video_format = video_format
+        self.client_spoofing = client_spoofing
         self.is_running = True
         self.current_filename = None
         self.ydl_instance = None
@@ -68,6 +69,17 @@ class DownloadWorker(QThread):
             'no_warnings': True,
             'ignoreerrors': False, # We want to catch errors to retry
         }
+
+        # Configure client spoofing
+        if self.client_spoofing and self.client_spoofing != "None":
+            if "Android + Web" in self.client_spoofing:
+                ydl_opts['extractor_args'] = {'youtube': ['player_client=android,web']}
+            elif "Android" in self.client_spoofing:
+                ydl_opts['extractor_args'] = {'youtube': ['player_client=android']}
+            elif "Web" in self.client_spoofing:
+                ydl_opts['extractor_args'] = {'youtube': ['player_client=web']}
+            elif "iOS" in self.client_spoofing:
+                ydl_opts['extractor_args'] = {'youtube': ['player_client=ios']}
 
         # Add cookies if the file exists
         if self.browser_name:

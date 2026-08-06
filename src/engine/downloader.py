@@ -67,6 +67,7 @@ class DownloadWorker(QThread):
             'quiet': True,
             'no_warnings': True,
             'ignoreerrors': False, # We want to catch errors to retry
+            'extractor_args': {'youtube': ['player_client=android,web']},
         }
 
         # Add cookies if the file exists

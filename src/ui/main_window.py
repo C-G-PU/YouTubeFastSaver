@@ -85,7 +85,11 @@ class MainWindow(QMainWindow):
         settings_layout.addWidget(QLabel("Theme:"))
         settings_layout.addWidget(self.theme_combo)
 
-        self.use_browser_cookies_cb = QCheckBox("Use browser cookies")
+        self.use_internal_cookies_cb = QCheckBox("Use internal cookies")
+        self.use_internal_cookies_cb.setChecked(True)
+        settings_layout.addWidget(self.use_internal_cookies_cb)
+
+        self.use_browser_cookies_cb = QCheckBox("Use external browser cookies")
         settings_layout.addWidget(self.use_browser_cookies_cb)
 
         self.browser_combo = QComboBox()
@@ -232,6 +236,9 @@ class MainWindow(QMainWindow):
         download_dir = self.settings["download_dir"]
         from src.ui.browser_window import COOKIES_FILE
 
+        use_internal_cookies = self.use_internal_cookies_cb.isChecked()
+        cookies_file = COOKIES_FILE if use_internal_cookies else None
+
         use_browser_cookies = self.use_browser_cookies_cb.isChecked()
         browser_name = self.browser_combo.currentText() if use_browser_cookies else None
 
@@ -241,12 +248,12 @@ class MainWindow(QMainWindow):
 
         # UI update
         self.log(f"Initializing download for: {url}")
-        self.log(f"Preset: {preset}, Video Format: {video_format}, Force: {force}, Browser Cookies: {use_browser_cookies} ({browser_name}), Client: {client_spoofing}")
+        self.log(f"Preset: {preset}, Video Format: {video_format}, Force: {force}, Internal Cookies: {use_internal_cookies}, Browser Cookies: {use_browser_cookies} ({browser_name}), Client: {client_spoofing}")
 
         progress_bar, cancel_btn, item_widget = self.downloads_list.add_download(url)
 
         from src.engine.downloader import DownloadWorker
-        worker = DownloadWorker(url, preset, download_dir, COOKIES_FILE, force_download=force, browser_name=browser_name, video_format=video_format, client_spoofing=client_spoofing)
+        worker = DownloadWorker(url, preset, download_dir, cookies_file, force_download=force, browser_name=browser_name, video_format=video_format, client_spoofing=client_spoofing)
 
         if force:
             self.active_force_worker = worker

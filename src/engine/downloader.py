@@ -84,7 +84,7 @@ class DownloadWorker(QThread):
         # Add cookies if the file exists
         if self.browser_name:
             ydl_opts['cookiesfrombrowser'] = (self.browser_name,)
-        elif os.path.exists(self.cookies_file):
+        elif self.cookies_file and os.path.exists(self.cookies_file):
             ydl_opts['cookiefile'] = self.cookies_file
 
         if "Audio" in self.preset_name:

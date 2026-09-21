@@ -68,14 +68,19 @@ class DownloadWorker(QThread):
             'quiet': True,
             'no_warnings': True,
             'ignoreerrors': False, # We want to catch errors to retry
+            'legacyserver': False, # Help bypass some newer checks
         }
 
         # Configure client spoofing
         if self.client_spoofing and self.client_spoofing != "None":
-            if "Android + Web" in self.client_spoofing:
-                ydl_opts['extractor_args'] = {'youtube': ['player_client=android,web']}
-            elif "Android" in self.client_spoofing:
+            if "Android (Default)" in self.client_spoofing or self.client_spoofing == "Android":
                 ydl_opts['extractor_args'] = {'youtube': ['player_client=android']}
+            elif "Android + TV" in self.client_spoofing:
+                ydl_opts['extractor_args'] = {'youtube': ['player_client=android,tv']}
+            elif "Android + Web" in self.client_spoofing:
+                ydl_opts['extractor_args'] = {'youtube': ['player_client=android,web']}
+            elif "TV" in self.client_spoofing:
+                ydl_opts['extractor_args'] = {'youtube': ['player_client=tv']}
             elif "Web" in self.client_spoofing:
                 ydl_opts['extractor_args'] = {'youtube': ['player_client=web']}
             elif "iOS" in self.client_spoofing:

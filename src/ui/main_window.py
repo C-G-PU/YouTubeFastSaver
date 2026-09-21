@@ -100,10 +100,12 @@ class MainWindow(QMainWindow):
         settings_layout.addWidget(QLabel("Client:"))
         self.client_spoofing_combo = QComboBox()
         self.client_spoofing_combo.addItems([
-            "Android + Web (Default)",
-            "Android",
-            "Web",
+            "Android (Default)",
             "iOS",
+            "TV",
+            "Android + TV",
+            "Android + Web",
+            "Web",
             "None"
         ])
         settings_layout.addWidget(self.client_spoofing_combo)

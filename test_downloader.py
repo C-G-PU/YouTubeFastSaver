@@ -9,7 +9,7 @@ def test_downloader():
     print("Testing downloader logic...")
     url = "https://www.youtube.com/watch?v=jNQXAC9IVRw" # Me at the zoo (first youtube video)
 
-    worker = DownloadWorker(url, "Video - 360p", "./", "no_cookies.txt", client_spoofing="Android")
+    worker = DownloadWorker(url, "Video - 360p", "./", "no_cookies.txt", client_spoofing="Android (Default)")
 
     metadata_fetched = False
 
